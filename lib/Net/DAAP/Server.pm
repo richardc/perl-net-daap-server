@@ -3,32 +3,12 @@ use strict;
 use warnings;
 use Net::DAAP::Server::Track;
 use File::Find::Rule;
-use Net::DMAP::Server;
 use base qw( Net::DMAP::Server );
-
-our $VERSION = '1.21';
-
-=head1 NAME
-
-Net::DAAP::Server - Provide a DAAP Server
-
-=head1 SYNOPSIS
-
- use POE;
- use Net::DAAP::Server;
-
- my $server = Net::DAAP::Server->new(
-     path => '/my/mp3/collection',
-     port => 666,
- );
- $poe_kernel->run;
-
-
-=head1 DESCRIPTION
-
-=cut
+our $VERSION = '0.01';
 
 sub protocol { 'daap' }
+
+sub default_port { 3689 }
 
 sub find_tracks {
     my $self = shift;
@@ -65,6 +45,60 @@ sub server_info {
 1;
 __END__
 
+=head1 NAME
+
+Net::DAAP::Server - Provide a DAAP Server
+
+=head1 SYNOPSIS
+
+ use POE;
+ use Net::DAAP::Server;
+
+ my $server = Net::DAAP::Server->new(
+     path => '/my/mp3/collection',
+     port => 666,
+     name => "Groovy hits of the 80's",
+ );
+ $poe_kernel->run;
+
+
+=head1 DESCRIPTION
+
+Net::DAAP::Server takes a directory of mp3 files and makes it
+available to iTunes and work-alikes which can use the Digital Audio
+Access Protocol
+
+=head1 METHODS
+
+=head2 new
+
+Creates a new daap server, takes the following arguments
+
+=over
+
+=item path
+
+A directory that will be scanned for *.mp3 files to share.
+
+=item name
+
+The name of your DAAP share, will default to a combination of the
+module name, hostname, and process id.
+
+=item port
+
+The port to listen on, will default to the default port, 3689.
+
+=back
+
+=head1 CAVEATS
+
+Currently only shares .mp3 files.
+
+Doesn't support playlists.
+
+You can't skip around the playing track - I need to figure out how
+this works against iTunes servers.
 
 =head1 AUTHOR
 
@@ -79,5 +113,6 @@ it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 
+Net::DAAP::Client
 
 =cut
