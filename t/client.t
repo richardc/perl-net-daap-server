@@ -32,14 +32,14 @@ my $client = Net::DAAP::Client->new(
 
 ok( $client->connect, "could connect and grab database" );
 my $songs = $client->songs;
-is( scalar keys %$songs, 2, "2 songs in the database" );
+is( scalar keys %$songs, 3, "3 songs in the database" );
 
 
 my @playlists = values %{ $client->playlists };
 is( $playlists[0]{'dmap.itemname'}, $name, 'got main playlist');
 
 my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
-is( scalar @$playlist_tracks, 2, "2 tracks on main playlist" );
+is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
 
 
 undef $client;
