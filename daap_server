@@ -2,6 +2,7 @@
 use strict;
 use warnings;
 use lib 'lib',
+  "$ENV{HOME}/lab/perl/Net-DAAP-DMAP/lib",
   "$ENV{HOME}/lab/perl/Net-DMAP-Server/lib",
   "$ENV{HOME}/hck/opensource-trunk/POE-Component-Server-HTTP/lib";
 use POE;

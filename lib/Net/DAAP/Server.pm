@@ -42,100 +42,37 @@ sub find_tracks {
 
 sub server_info {
     my $self = shift;
-    $self->_dmap_response( [[ 'dmap.serverinforesponse' => [
-        [ 'dmap.status'             => 200 ],
-        [ 'dmap.protocolversion'    => 2 ],
-        [ 'daap.protocolversion'    => 3 ],
-        [ 'dmap.itemname'           => ref $self ],
-        [ 'dmap.loginrequired'      => 0 ],
-        [ 'dmap.timeoutinterval'    => 1800 ],
-        [ 'dmap.supportsautologout' => 0 ],
-        [ 'dmap.supportsupdate'     => 0 ],
-        [ 'dmap.supportspersistentids' => 0 ],
-        [ 'dmap.supportsextensions' => 0 ],
-        [ 'dmap.supportsbrowse'     => 0 ],
-        [ 'dmap.supportsquery'      => 0 ],
-        [ 'dmap.supportsindex'      => 0 ],
-        [ 'dmap.supportsresolve'    => 0 ],
-        [ 'dmap.databasescount'     => 1 ],
-       ]]] );
+    my $response = shift;
+    $response->content( $self->_dmap_pack(
+        [[ 'dmap.serverinforesponse' => [
+            [ 'dmap.status'             => 200 ],
+            [ 'dmap.protocolversion'    => 2 ],
+            [ 'daap.protocolversion'    => 3 ],
+            [ 'dmap.itemname'           => ref $self ],
+            [ 'dmap.loginrequired'      => 0 ],
+            [ 'dmap.timeoutinterval'    => 1800 ],
+            [ 'dmap.supportsautologout' => 0 ],
+            [ 'dmap.supportsupdate'     => 0 ],
+            [ 'dmap.supportspersistentids' => 0 ],
+            [ 'dmap.supportsextensions' => 0 ],
+            [ 'dmap.supportsbrowse'     => 0 ],
+            [ 'dmap.supportsquery'      => 0 ],
+            [ 'dmap.supportsindex'      => 0 ],
+            [ 'dmap.supportsresolve'    => 0 ],
+            [ 'dmap.databasescount'     => 1 ],
+           ]]] ));
 }
 
-
-sub databases {
-    my $self = shift;
-    unless (@_) { # all databases
-        return $self->_dmap_response( [[ 'daap.serverdatabases' => [
-            [ 'dmap.status' => 200 ],
-            [ 'dmap.updatetype' =>  0 ],
-            [ 'dmap.specifiedtotalcount' =>  1 ],
-            [ 'dmap.returnedcount' => 1 ],
-            [ 'dmap.listing' => [
-                [ 'dmap.listingitem' => [
-                    [ 'dmap.itemid' =>  35 ],
-                    [ 'dmap.persistentid' => '13950142391337751523' ],
-                    [ 'dmap.itemname' => ref $self ],
-                    [ 'dmap.itemcount' => scalar keys %{ $self->tracks } ],
-                    [ 'dmap.containercount' =>  1 ],
-                   ],
-                 ],
-               ],
-             ],
-           ]]] );
-    }
-    my $database_id = shift;
-    my $action = shift;
-    if ($action eq 'items') {
-        my $tracks = $self->_all_tracks;
-        return $self->_dmap_response( [[ 'daap.databasesongs' => [
-            [ 'dmap.status' => 200 ],
-            [ 'dmap.updatetype' => 0 ],
-            [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
-            [ 'dmap.returnedcount' => scalar @$tracks ],
-            [ 'dmap.listing' => $tracks ]
-           ]]] );
-    }
-    if ($action eq 'containers') {
-        return $self->_playlists( @_ );
-    }
-}
 
 sub _playlists {
     my $self = shift;
     return $self->_playlist_songs( @_ ) if @_ && $_[1] eq 'items';
 
-    my $tracks = $self->_all_tracks;
-    $self->_dmap_response( [[ 'daap.databaseplaylists' => [
-        [ 'dmap.status'              => 200 ],
-        [ 'dmap.updatetype'          =>   0 ],
-        [ 'dmap.specifiedtotalcount' =>   1 ],
-        [ 'dmap.returnedcount'       =>   1 ],
-        [ 'dmap.listing'             => [
-            [ 'dmap.listingitem' => [
-                [ 'dmap.itemid'       => 39 ],
-                [ 'dmap.persistentid' => '13950142391337751524' ],
-                [ 'dmap.itemname'     => ref $self ],
-                [ 'com.apple.itunes.smart-playlist' => 0 ],
-                [ 'dmap.itemcount'    => scalar @$tracks ],
-               ],
-             ],
-           ],
-         ],
-       ]]] );
 }
 
 sub _playlist_songs {
     my $self = shift;
-    my $tracks = $self->_all_tracks;
-    $self->_dmap_response( [[ 'daap.playlistsongs' => [
-        [ 'dmap.status' => 200 ],
-        [ 'dmap.updatetype' => 0 ],
-        [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
-        [ 'dmap.returnedcount'       => scalar @$tracks ],
-        [ 'dmap.listing' => $tracks ]
-       ]]] );
 }
-
 
 
 sub item_field {

@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use base qw( Class::Accessor::Fast );
 use MP3::Info;
+use Perl6::Slurp;
 
 __PACKAGE__->mk_accessors(qw(
       file
@@ -84,6 +85,11 @@ sub new_from_file {
     $self->daap_songcodecsubtype( 3 ); # or is this mp3?
 
     return $self;
+}
+
+sub data {
+    my $self = shift;
+    scalar slurp $self->file;
 }
 
 1;
