@@ -36,4 +36,5 @@ $client->{DEBUG} = 1;
 
 ok( $client->connect, "could connect and grab database" );
 
+undef $client;
 kill "TERM", $pid;
