@@ -9,15 +9,15 @@ my $path = shift || 't/lib/';
 
 my $server = Net::DAAP::Server->new(path => $path);
 my $d = HTTP::Daemon->new(
-    LocalAddr => 'localhost',
-    LocalPort => 3689,
+    LocalPort => 23689,
     ReuseAddr => 1) || die;
 
 print "Please contact me at: ", $d->url, "\n";
 while (my $c = $d->accept) {
     while (my $request = $c->get_request) {
+        print $request->as_string;
         my $response = $server->run($request);
-        $c->send_response ($response);
+        $c->send_response( $response );
     }
     $c->close;
     undef($c);

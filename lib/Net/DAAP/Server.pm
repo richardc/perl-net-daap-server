@@ -43,6 +43,10 @@ sub new {
     return $self;
 }
 
+sub run {
+    HTTP::Response->new( 500 );
+}
+
 sub db_class { "Net::DAAP::Server::Store" }
 
 
