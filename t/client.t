@@ -1,11 +1,11 @@
 #!perl
 use strict;
 use warnings;
-use Test::More tests => 1;
+use Test::More tests => 3;
 use lib 'lib', "$ENV{HOME}/hck/opensource-trunk/Class-Persist/lib";
 
 use Net::DAAP::Server;
-use Net::DAAP::Client;
+use Net::DAAP::Client::Auth;
 use HTTP::Daemon;
 
 my $port = 23689;
@@ -30,11 +30,22 @@ unless ($pid) {
 sleep 1; # give it time to warm up
 diag( "Now testing" );
 
-my $client = Net::DAAP::Client->new( SERVER_HOST => 'localhost' );
+my $client = Net::DAAP::Client::Auth->new( SERVER_HOST => 'localhost' );
 $client->{SERVER_PORT} = $port;
 $client->{DEBUG} = 1;
 
 ok( $client->connect, "could connect and grab database" );
 
+my @playlists = values %{ $client->playlists };
+is( $playlists[0]{'dmap.itemname'}, 'Net::DAAP::Server', 'got main playlist');
+
+my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
+is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
+
+use YAML;
+print Dump $playlist_tracks;
+
 undef $client;
 kill "TERM", $pid;
+waitpid $pid, 0;
+

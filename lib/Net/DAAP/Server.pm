@@ -183,23 +183,82 @@ sub databases {
            ]]];
     }
     if ($action eq 'containers') {
-        return dmap_pack [[ 'daap.databaseplaylists' => [
-            [ 'dmap.status'              => 200 ],
-            [ 'dmap.updatetype'          =>   0 ],
-            [ 'dmap.specifiedtotalcount' =>   1 ],
-            [ 'dmap.returnedcount'       =>   1 ],
-            [ 'dmap.listing'             => [
+        return $self->_playlists( @_ );
+    }
+}
+
+sub _playlists {
+    my $self = shift;
+    return $self->_playlist_songs(@_) if @_ && $_[1] eq 'items';
+
+    return dmap_pack [[ 'daap.databaseplaylists' => [
+        [ 'dmap.status'              => 200 ],
+        [ 'dmap.updatetype'          =>   0 ],
+        [ 'dmap.specifiedtotalcount' =>   1 ],
+        [ 'dmap.returnedcount'       =>   1 ],
+        [ 'dmap.listing'             => [
+            [ 'dmap.listingitem' => [
+                [ 'dmap.itemid'       => 39 ],
+                [ 'dmap.persistentid' => '13950142391337751524' ],
+                [ 'dmap.itemname'     => __PACKAGE__ ],
+                [ 'dmap.itemcount'    => 3 ],
+               ],
+             ],
+           ],
+         ],
+       ]]];
+}
+
+sub _playlist_songs {
+    dmap_pack [[ 'daap.playlistsongs' => [
+        [ 'dmap.status' => 200 ],
+        [ 'dmap.updatetype' => 0 ],
+        [ 'dmap.specifiedtotalcount' => 3 ],
+        [ 'dmap.returnedcount'       => 3 ],
+
+            [ 'dmap.listing' => [
                 [ 'dmap.listingitem' => [
-                    [ 'dmap.itemid'       => 39 ],
-                    [ 'dmap.persistentid' => '13950142391337751524' ],
-                    [ 'dmap.itemname'     => 'richardc (iTunes 4.5 small sample)' ],
-                    [ 'dmap.itemcount'    => 3 ],
+                    [ 'daap.songalbum'  => '' ],
+                    [ 'daap.songartist' => 'Crysler' ],
+                    [ 'daap.songcompilation' => 0 ],
+                    [ 'daap.songformat' => 'mp3' ],
+                    [ 'dmap.itemid' => 36 ],
+                    [ 'dmap.itemname' => 'Insomnia - mastered' ],
+                    [ 'dmap.persistentid' =>     '13950142391337751539' ],
+                    [ 'daap.songsize' =>     4453814 ],
+                    [ 'daap.songtrackcount' =>     3 ],
+                    [ 'daap.songtracknumber' =>     1 ]
+                   ],
+                 ],
+                [ 'dmap.listingitem' => [
+                    [ 'daap.songalbum' =>     '' ],
+                    [ 'daap.songartist' =>     'Crysler' ],
+                    [ 'daap.songcompilation' =>     0    ],
+                    [ 'daap.songformat' =>     'mp3'     ],
+                    [ 'dmap.itemid' =>     37            ],
+                    [ 'dmap.itemname' =>     'Games - mastered' ],
+                    [ 'dmap.persistentid' =>     '13950142391337751540' ],
+                    [ 'daap.songsize' => 3436916   ],
+                    [ 'daap.songtrackcount' => 3   ],
+                    [ 'daap.songtracknumber' => 2  ],
+                   ],
+                 ],
+                [ 'dmap.listingitem' => [
+                    [ 'daap.songalbum' => ''   ],
+                    [ 'daap.songartist' => 'Crysler'  ],
+                    [ 'daap.songcompilation' => 0  ],
+                    [ 'daap.songformat' => 'mp3'  ],
+                    [ 'dmap.itemid' => 38  ],
+                    [ 'dmap.itemname' => 'Your Voice - mastered'  ],
+                    [ 'dmap.persistentid' => '13950142391337751541'  ],
+                    [ 'daap.songsize' => 6554061  ],
+                    [ 'daap.songtrackcount' => 3 ],
+                    [ 'daap.songtracknumber' => 3  ]
                    ],
                  ],
                ],
              ],
-           ]]];
-    }
+       ]]];
 }
 
 
