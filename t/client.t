@@ -42,8 +42,6 @@ is( $playlists[0]{'dmap.itemname'}, 'Net::DAAP::Server', 'got main playlist');
 my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
 is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
 
-use YAML;
-print Dump $playlist_tracks;
 
 undef $client;
 kill "TERM", $pid;

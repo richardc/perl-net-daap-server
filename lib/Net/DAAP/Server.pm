@@ -40,7 +40,7 @@ Net::DAAP::Server - Provide a DAAP Server
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new( { @_ } );
-    $self->_db( $self->db_class->open( $self->path ) );
+    $self->_db( $self->db_class->new->path( $self->path )->open );
     return $self;
 }
 
