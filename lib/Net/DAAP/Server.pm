@@ -86,11 +86,10 @@ sub content_codes {
     dmap_pack [[ 'dmap.contentcodesresponse' => [
         [ 'dmap.status'             => 200 ],
         map { [ 'dmap.dictionary' => [
-            [ 'dmap.contentcodesnumber' => $_->{ID} ],
+            [ 'dmap.contentcodesnumber' => $_->{ID}   ],
             [ 'dmap.contentcodesname'   => $_->{NAME} ],
-            [ 'dmap.contentcodestype' => $_->{TYPE} ],
-           ],
-               ] } values %Net::DAAP::DMAP::Pack::types,
+            [ 'dmap.contentcodestype'   => $_->{TYPE} ],
+           ] ] } values %Net::DAAP::DMAP::Pack::types,
        ]]];
 }
 
