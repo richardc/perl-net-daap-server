@@ -97,7 +97,7 @@ sub new_from_file {
     $self->daap_songdatemodified( $stat[9] );
     $self->daap_songdisabled( 0 );
     $self->daap_songeqpreset( '' );
-    $file =~ m{\.(.*?)$};
+    $file =~ m{\.([^\.]+)$};
     $self->daap_songformat( $1 );
     $self->daap_songgenre( '' );
     $self->daap_songgrouping( '' );
