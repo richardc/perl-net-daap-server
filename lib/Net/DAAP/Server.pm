@@ -4,7 +4,7 @@ use warnings;
 use Net::DAAP::Server::Track;
 use File::Find::Rule;
 use base qw( Net::DMAP::Server );
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub protocol { 'daap' }
 
@@ -12,7 +12,7 @@ sub default_port { 3689 }
 
 sub find_tracks {
     my $self = shift;
-    for my $file ( find name => "*.mp3", in => $self->path ) {
+    for my $file ( find name => [ "*.mp3", "*.m4p", "*.m4a" ], in => $self->path ) {
         my $track = Net::DAAP::Server::Track->new_from_file( $file ) or next;
         $self->tracks->{ $track->dmap_itemid } = $track;
     }
