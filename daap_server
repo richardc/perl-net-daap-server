@@ -1,24 +1,10 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib 'lib', "$ENV{HOME}/lab/local/dapple/lib";
-use HTTP::Daemon;
+use lib 'lib', "$ENV{HOME}/hck/opensource-trunk/POE-Component-Server-HTTP/lib";
+use POE;
 use Net::DAAP::Server;
 
 my $path = shift || 't/share';
-
-my $server = Net::DAAP::Server->new(path => $path);
-my $d = HTTP::Daemon->new(
-    LocalPort => 23689,
-    ReuseAddr => 1) || die;
-
-print "Please contact me at: ", $d->url, "\n";
-while (my $c = $d->accept) {
-    while (my $request = $c->get_request) {
-        my $response = $server->run($request);
-        $c->send_response( $response );
-    }
-    $c->close;
-    undef($c);
-}
-
+my $server = Net::DAAP::Server->new(path => $path, port => 23689, debug => 1);
+$poe_kernel->run;

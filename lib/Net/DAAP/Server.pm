@@ -1,12 +1,14 @@
 package Net::DAAP::Server;
 use strict;
 use warnings;
+use POE::Component::Server::HTTP;
 use Net::DAAP::Server::ContentCodes;
 use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
+use HTTP::Daemon;
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( path tracks uri ));
+__PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri ));
 
 our $VERSION = '1.21';
 
@@ -16,23 +18,14 @@ Net::DAAP::Server - Provide a DAAP Server
 
 =head1 SYNOPSIS
 
+ use POE;
  use Net::DAAP::Server;
 
- my $server = Net::DAAP::Server->new(path => '/my/mp3/collection');
- my $d = HTTP::Daemon->new(
-   LocalAddr => 'localhost',
-   LocalPort => 3689,
-   ReuseAddr => 1) || die;
-
- print "Please contact me at: ", $d->url, "\n";
- while (my $c = $d->accept) {
-   while (my $request = $c->get_request) {
-     my $response = $server->run($request);
-     $c->send_response ($response);
-   }
-   $c->close;
-   undef($c);
- }
+ my $server = Net::DAAP::Server->new(
+     path => '/my/mp3/collection',
+     port => 666,
+ );
+ $poe_kernel->run;
 
 
 =head1 DESCRIPTION
@@ -49,23 +42,34 @@ sub new {
         $self->tracks->{ $track->dmap_itemid } = $track;
     }
     #print Dump $self;
+    $self->httpd( POE::Component::Server::HTTP->new(
+        Port => $self->port,
+        ContentHandler => { '/' => sub { $self->handler(@_) } },
+       ) );
     return $self;
 }
 
-sub run {
+sub handler {
     my $self = shift;
-    my $r = shift;
-    my (undef, $method, @args) = split m{/}, $r->uri->path;
+    my ($request, $response) = @_;
+    my (undef, $method, @args) = split m{/}, $request->uri->path;
     $method =~ s/-/_/g; # server-info => server_info
-    #print Dump { $method => \@args };
+
     local $self->{uri};
-    $self->uri( $r->uri );
-    print $r->uri, "\n";
-    return $self->$method( @args )
-      if $self->can( $method );
+    $self->uri( $request->uri );
+    print $request->uri, " => $method\n" if $self->debug;
+    if ($self->can( $method )) {
+        my $res = $self->$method( @args );
+        #print Dump $res;
+        $response->code( $res->code );
+        $response->content( $res->content );
+        $response->content_type( $res->content_type );
+        return $response->code;
+    }
 
     print "Can't $method: ". $self->uri;
-    HTTP::Response->new( 500 );
+    $response->code( 500 );
+    return 500;
 }
 
 sub _dmap_response {
@@ -74,7 +78,7 @@ sub _dmap_response {
     my $response = HTTP::Response->new( 200 );
     $response->content_type( 'application/x-dmap-tagged' );
     $response->content( dmap_pack $dmap );
-    print Dump $dmap if $self->uri =~ m{music};
+    #print Dump $dmap; if $self->uri =~ m{music} && $self->debug;
     return $response;
 }
 
@@ -123,8 +127,8 @@ sub logout { HTTP::Response->new( 200 ) }
 
 sub update {
     my $self = shift;
-    # XXX hacky - nothing to update - don't answer
-    sleep if $self->uri =~ m{revision-number=42};
+    return HTTP::Response->new( RC_WAIT )
+      if $self->uri =~ m{revision-number=42};
 
     $self->_dmap_response( [[ 'dmap.updateresponse' => [
         [ 'dmap.status'         => 200 ],
@@ -185,6 +189,7 @@ sub _playlists {
                 [ 'dmap.itemid'       => 39 ],
                 [ 'dmap.persistentid' => '13950142391337751524' ],
                 [ 'dmap.itemname'     => __PACKAGE__ ],
+                [ 'com.apple.itunes.smart-playlist' => 0 ],
                 [ 'dmap.itemcount'    => scalar @$tracks ],
                ],
              ],
@@ -210,17 +215,16 @@ sub _all_tracks {
     my $self = shift;
     my @tracks;
 
-    my @fields;
-    if ($self->uri =~ m{type=music}) {
-        $self->uri =~ m{meta=(.*?)&};
-        @fields = split /,/, $1;
-    }
+    $self->uri =~ m{meta=(.*?)&};
+    my @fields = split /,/, $1;
 
     for my $track (values %{ $self->tracks }) {
+        my %values = ( com_apple_itunes_smart_playlist => 0, %$track );
+
         push @tracks, [ 'dmap.listingitem' => [
             map {
                 (my $field = $_) =~ s{[.-]}{_}g;
-                [ $_ => $track->$field() ]
+                [ $_ => $values{$field} ]
             } @fields ] ];
     }
     return \@tracks;

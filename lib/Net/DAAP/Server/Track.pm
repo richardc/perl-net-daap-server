@@ -36,8 +36,8 @@ sub new_from_file {
     my $tag = MP3::Info->new( $file );
 
     my @stat = stat $file;
-    $self->dmap_itemid( $stat[1] );
-    $self->dmap_containeritemid( $stat[1] );
+    $self->dmap_itemid( $stat[1] ); # the inode should be good enough
+    $self->dmap_containeritemid( 0+$self );
 
     $self->dmap_itemname( $tag->title );
     $self->dmap_itemkind( 2 ); # music
