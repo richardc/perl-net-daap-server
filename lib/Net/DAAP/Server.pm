@@ -66,7 +66,7 @@ sub server_info {
     dmap_pack [[ 'dmap.serverinforesponse' => [
         [ 'dmap.status'             => 200 ],
         [ 'dmap.protocolversion'    => 2 ],
-        [ 'daap.protocolversion'    => 1 ],
+        [ 'daap.protocolversion'    => 3 ],
         [ 'dmap.itemname'           => __PACKAGE__ ],
         [ 'dmap.loginrequired'      => 0 ],
         [ 'dmap.timeoutinterval'    => 1800 ],
@@ -82,10 +82,22 @@ sub server_info {
        ]]];
 }
 
+sub content_codes {
+    dmap_pack [[ 'dmap.contentcodesresponse' => [
+        [ 'dmap.status'             => 200 ],
+        map { [ 'dmap.dictionary' => [
+            [ 'dmap.contentcodesnumber' => $_->{ID} ],
+            [ 'dmap.contentcodesname'   => $_->{NAME} ],
+            [ 'dmap.contentcodestype' => $_->{TYPE} ],
+           ],
+               ] } values %Net::DAAP::DMAP::Pack::types,
+       ]]];
+}
+
 sub login {
     dmap_pack [[ 'dmap.loginresponse' => [
         [ 'dmap.status'    => 200 ],
-        [ 'dmap.sessionid' => 42 ],
+        [ 'dmap.sessionid' =>  42 ],
        ]]];
 }
 
@@ -93,8 +105,8 @@ sub logout { return }
 
 sub update {
     dmap_pack [[ 'dmap.updateresponse' => [
-        [ 'dmap.status' =>  200 ],
-        [ 'dmap.serverrevision' => 42 ],
+        [ 'dmap.status'         => 200 ],
+        [ 'dmap.serverrevision' =>  42 ],
        ]]];
 }
 
