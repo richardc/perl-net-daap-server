@@ -41,13 +41,13 @@ sub find_tracks {
 }
 
 sub server_info {
-    my $self = shift;
-    my $response = shift;
+    my ($self, $request, $response) = @_;
     $response->content( $self->_dmap_pack(
         [[ 'dmap.serverinforesponse' => [
             [ 'dmap.status'             => 200 ],
             [ 'dmap.protocolversion'    => 2 ],
-            [ 'daap.protocolversion'    => 3 ],
+            [ 'daap.protocolversion'    =>
+                $request->header('Client-DAAP-Version') ],
             [ 'dmap.itemname'           => $self->name ],
             [ 'dmap.loginrequired'      => 0 ],
             [ 'dmap.timeoutinterval'    => 1800 ],
