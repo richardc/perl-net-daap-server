@@ -71,7 +71,8 @@ sub new_from_file {
     $self->daap_songsize( -s $file );
     $self->daap_songstarttime( 0 );
     $self->daap_songstoptime( 0 );
-    $self->daap_songtime( int $tag->secs );
+    $self->daap_songtime( int ($tag->secs * 1000) );
+
     my ($number, $count) = split m{/}, $tag->tracknum;
     $self->daap_songtrackcount( $count || 0);
     $self->daap_songtracknumber( $number || 0 );
