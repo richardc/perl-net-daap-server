@@ -5,7 +5,7 @@ use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP::Pack qw( dmap_pack );
 use File::Find::Rule;
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( path tracks ));
+__PACKAGE__->mk_accessors(qw( path tracks uri ));
 
 our $VERSION = '1.21';
 
@@ -110,9 +110,12 @@ sub login {
 
 sub logout { return }
 
-my $one;
+
 sub update {
-    sleep if $one++;
+    my $self = shift;
+    # XXX hacky - nothing to update - don't answer
+    sleep if $self->uri =~ m{revision-number=42};
+
     dmap_pack [[ 'dmap.updateresponse' => [
         [ 'dmap.status'         => 200 ],
         [ 'dmap.serverrevision' =>  42 ],
@@ -195,7 +198,7 @@ sub _all_tracks {
 
 sub wanted_fields {
     my $self = shift;
-    $self->{uri} =~ m{meta=(.*?)&};
+    $self->uri =~ m{meta=(.*?)&};
     return split /,/, $1;
 }
 
