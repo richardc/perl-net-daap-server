@@ -23,7 +23,7 @@ __PACKAGE__->mk_accessors(qw(
       com_apple_itunes_itms_songid com_apple_itunes_itms_artistid
       com_apple_itunes_itms_playlistid com_apple_itunes_itms_composerid
       com_apple_itunes_itms_genreid
-
+      dmap_containeritemid
      ));
 
 my $i;

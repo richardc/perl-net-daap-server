@@ -144,7 +144,7 @@ sub databases {
     my $action = shift;
     if ($action eq 'items') {
         my $tracks = $self->_all_tracks;
-        dmap_pack [[ 'daap.databasesongs' => [
+        return dmap_pack [[ 'daap.databasesongs' => [
             [ 'dmap.status' => 200 ],
             [ 'dmap.updatetype' => 0 ],
             [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
