@@ -51,7 +51,7 @@ sub new {
       or die "couldn't make a Responder object";
     $self->publisher( $publisher );
     $self->service( $publisher->publish(
-        name => __PACKAGE__,
+        name => ref $self,
         type => '_'.$self->protocol.'._tcp',
         port => $self->port,
        ) );
@@ -109,7 +109,7 @@ sub server_info {
         [ 'dmap.status'             => 200 ],
         [ 'dmap.protocolversion'    => 2 ],
         [ 'daap.protocolversion'    => 3 ],
-        [ 'dmap.itemname'           => __PACKAGE__ ],
+        [ 'dmap.itemname'           => ref $self ],
         [ 'dmap.loginrequired'      => 0 ],
         [ 'dmap.timeoutinterval'    => 1800 ],
         [ 'dmap.supportsautologout' => 0 ],
@@ -169,7 +169,7 @@ sub databases {
                 [ 'dmap.listingitem' => [
                     [ 'dmap.itemid' =>  35 ],
                     [ 'dmap.persistentid' => '13950142391337751523' ],
-                    [ 'dmap.itemname' => __PACKAGE__ ],
+                    [ 'dmap.itemname' => ref $self ],
                     [ 'dmap.itemcount' => scalar keys %{ $self->tracks } ],
                     [ 'dmap.containercount' =>  1 ],
                    ],
@@ -209,7 +209,7 @@ sub _playlists {
             [ 'dmap.listingitem' => [
                 [ 'dmap.itemid'       => 39 ],
                 [ 'dmap.persistentid' => '13950142391337751524' ],
-                [ 'dmap.itemname'     => __PACKAGE__ ],
+                [ 'dmap.itemname'     => ref $self ],
                 [ 'com.apple.itunes.smart-playlist' => 0 ],
                 [ 'dmap.itemcount'    => scalar @$tracks ],
                ],
