@@ -1,11 +1,11 @@
 #!perl
 use strict;
 use warnings;
-use Test::More tests => 3;
+use Test::More tests => 4;
 use lib 'lib', "$ENV{HOME}/lab/perl/Net-DAAP-DMAP-Pack/lib";
 
 use Net::DAAP::Server;
-use Net::DAAP::Client::Auth;
+use Net::DAAP::Client;
 use HTTP::Daemon;
 
 my $port = 23689;
@@ -30,21 +30,20 @@ unless ($pid) {
 sleep 1; # give it time to warm up
 diag( "Now testing" );
 
-my $client = Net::DAAP::Client::Auth->new( SERVER_HOST => 'localhost' );
+my $client = Net::DAAP::Client->new( SERVER_HOST => 'localhost' );
 $client->{SERVER_PORT} = $port;
-$client->{DEBUG} = 1;
+$client->{DEBUG} = 0;
 
 ok( $client->connect, "could connect and grab database" );
-
 my $songs = $client->songs;
-is( scalar keys %$songs, 3, "3 songs in the database" );
+is( scalar keys %$songs, 2, "2 songs in the database" );
 
 
 my @playlists = values %{ $client->playlists };
 is( $playlists[0]{'dmap.itemname'}, 'Net::DAAP::Server', 'got main playlist');
 
-#my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
-#is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
+my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
+is( scalar @$playlist_tracks, 2, "2 tracks on main playlist" );
 
 
 undef $client;
