@@ -62,8 +62,8 @@ sub new_from_file {
     # $self->daap_songstoptime( );
     # $self->daap_songtime( );
     my ($number, $count) = split m{/}, $tag->tracknum;
-    $self->daap_songtrackcount( $number );
-    $self->daap_songtracknumber( $count );
+    $self->daap_songtrackcount( $count );
+    $self->daap_songtracknumber( $number );
     # $self->daap_songuserrating( );
     $self->daap_songyear( $tag->year );
     # $self->daap_songdatakind( );
