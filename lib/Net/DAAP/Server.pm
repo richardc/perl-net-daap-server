@@ -5,7 +5,6 @@ use Net::DAAP::Server::Track;
 use File::Find::Rule;
 use Net::DMAP::Server;
 use base qw( Net::DMAP::Server );
-__PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri publisher service ));
 
 our $VERSION = '1.21';
 
@@ -138,11 +137,6 @@ sub _playlist_songs {
 }
 
 
-# some things are always present in the listings returned, whether you
-# ask for them or not
-sub always_answer {
-    qw( dmap.itemkind dmap.itemid dmap.itemname );
-}
 
 sub item_field {
     my $self = shift;
@@ -169,6 +163,12 @@ sub response_tracks {
 sub uniq {
     my %seen;
     return grep { !$seen{$_}++ } @_;
+}
+
+# some things are always present in the listings returned, whether you
+# ask for them or not
+sub always_answer {
+    qw( dmap.itemkind dmap.itemid dmap.itemname );
 }
 
 sub response_fields {
