@@ -57,7 +57,7 @@ sub handler {
 
     local $self->{uri};
     $self->uri( $request->uri );
-    print $request->uri, " => $method\n" if $self->debug;
+    print $request->uri, "\n" if $self->debug;
     if ($self->can( $method )) {
         my $res = $self->$method( @args );
         #print Dump $res;
