@@ -47,13 +47,150 @@ sub new {
 sub run {
     my $self = shift;
     my $r = shift;
-    print $r->uri->path . "\n";
+    my (undef, $method, @args) = split m{/}, $r->uri->path;
+    $method =~ s/-/_/g; # server-info => server_info
+    use YAML;
+    print Dump { $method => \@args };
+    if ($self->can( $method )) {
+        my $response = HTTP::Response->new( 200 );
+        $response->content_type( 'application/x-dmap-tagged' );
+        $response->content( $self->$method(@args) );
+        return $response;
+    }
+
+    print "Can't $method: ". $r->uri->path;
     HTTP::Response->new( 500 );
 }
 
 sub server_info {
-    return dmap_pack([[]]);
+    dmap_pack [[ 'dmap.serverinforesponse' => [
+        [ 'dmap.status'             => 200 ],
+        [ 'dmap.protocolversion'    => 2 ],
+        [ 'daap.protocolversion'    => 1 ],
+        [ 'dmap.itemname'           => __PACKAGE__ ],
+        [ 'dmap.loginrequired'      => 0 ],
+        [ 'dmap.timeoutinterval'    => 1800 ],
+        [ 'dmap.supportsautologout' => 0 ],
+        [ 'dmap.supportsupdate'     => 0 ],
+        [ 'dmap.supportspersistentids' => 0 ],
+        [ 'dmap.supportsextensions' => 0 ],
+        [ 'dmap.supportsbrowse'     => 0 ],
+        [ 'dmap.supportsquery'      => 0 ],
+        [ 'dmap.supportsindex'      => 0 ],
+        [ 'dmap.supportsresolve'    => 0 ],
+        [ 'dmap.databasescount'     => 1 ],
+       ]]];
 }
+
+sub login {
+    dmap_pack [[ 'dmap.loginresponse' => [
+        [ 'dmap.status'    => 200 ],
+        [ 'dmap.sessionid' => 42 ],
+       ]]];
+}
+
+sub logout { return }
+
+sub update {
+    dmap_pack [[ 'dmap.updateresponse' => [
+        [ 'dmap.status' =>  200 ],
+        [ 'dmap.serverrevision' => 42 ],
+       ]]];
+}
+
+sub databases {
+    my $self = shift;
+    unless (@_) { # all databases
+        return dmap_pack [[ 'daap.serverdatabases' => [
+            [ 'dmap.status' => 200 ],
+            [ 'dmap.updatetype' =>  0 ],
+            [ 'dmap.specifiedtotalcount' =>  1 ],
+            [ 'dmap.returnedcount' => 1 ],
+            [ 'dmap.listing' => [
+                [ 'dmap.listingitem' => [
+                    [ 'dmap.itemid' =>  35 ],
+                    [ 'dmap.persistentid' => '13950142391337751523' ],
+                    [ 'dmap.itemname' => __PACKAGE__ ],
+                    [ 'dmap.itemcount' => 3 ],
+                    [ 'dmap.containercount' =>  6 ],
+                   ],
+                 ],
+               ],
+             ],
+           ]]];
+    }
+    my $database_id = shift;
+    my $action = shift;
+    if ($action eq 'items') {
+        return dmap_pack [[ 'daap.databasesongs' => [
+            [ 'dmap.status' =>                   200 ],
+            [ 'dmap.updatetype' =>                 0 ],
+            [ 'dmap.specifiedtotalcount' =>        3 ],
+            [ 'dmap.returnedcount' =>              3 ],
+            [ 'dmap.listing' => [
+                [ 'dmap.listingitem' => [
+                    [ 'daap.songalbum'  => '' ],
+                    [ 'daap.songartist' => 'Crysler' ],
+                    [ 'daap.songcompilation' => 0 ],
+                    [ 'daap.songformat' => 'mp3' ],
+                    [ 'dmap.itemid' => 36 ],
+                    [ 'dmap.itemname' => 'Insomnia - mastered' ],
+                    [ 'dmap.persistentid' =>     '13950142391337751539' ],
+                    [ 'daap.songsize' =>     4453814 ],
+                    [ 'daap.songtrackcount' =>     3 ],
+                    [ 'daap.songtracknumber' =>     1 ]
+                   ],
+                 ],
+                [ 'dmap.listingitem' => [
+                    [ 'daap.songalbum' =>     '' ],
+                    [ 'daap.songartist' =>     'Crysler' ],
+                    [ 'daap.songcompilation' =>     0    ],
+                    [ 'daap.songformat' =>     'mp3'     ],
+                    [ 'dmap.itemid' =>     37            ],
+                    [ 'dmap.itemname' =>     'Games - mastered' ],
+                    [ 'dmap.persistentid' =>     '13950142391337751540' ],
+                    [ 'daap.songsize' => 3436916   ],
+                    [ 'daap.songtrackcount' => 3   ],
+                    [ 'daap.songtracknumber' => 2  ],
+                   ],
+                 ],
+                [ 'dmap.listingitem' => [
+                    [ 'daap.songalbum' => ''   ],
+                    [ 'daap.songartist' => 'Crysler'  ],
+                    [ 'daap.songcompilation' => 0  ],
+                    [ 'daap.songformat' => 'mp3'  ],
+                    [ 'dmap.itemid' => 38  ],
+                    [ 'dmap.itemname' => 'Your Voice - mastered'  ],
+                    [ 'dmap.persistentid' => '13950142391337751541'  ],
+                    [ 'daap.songsize' => 6554061  ],
+                    [ 'daap.songtrackcount' => 3 ],
+                    [ 'daap.songtracknumber' => 3  ]
+                   ]
+                 ]
+               ]
+             ],
+           ]]];
+    }
+    if ($action eq 'containers') {
+        return dmap_pack [[ 'daap.databaseplaylists' => [
+            [ 'dmap.status'              => 200 ],
+            [ 'dmap.updatetype'          =>   0 ],
+            [ 'dmap.specifiedtotalcount' =>   1 ],
+            [ 'dmap.returnedcount'       =>   1 ],
+            [ 'dmap.listing'             => [
+                [ 'dmap.listingitem' => [
+                    [ 'dmap.itemid'       => 39 ],
+                    [ 'dmap.persistentid' => '13950142391337751524' ],
+                    [ 'dmap.itemname'     => 'richardc (iTunes 4.5 small sample)' ],
+                    [ 'dmap.itemcount'    => 3 ],
+                   ],
+                 ],
+               ],
+             ],
+           ]]];
+    }
+}
+
 
 sub db_class { "Net::DAAP::Server::Store" }
 

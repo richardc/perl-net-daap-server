@@ -32,7 +32,7 @@ diag( "Now testing" );
 
 my $client = Net::DAAP::Client->new( SERVER_HOST => 'localhost' );
 $client->{SERVER_PORT} = $port;
-$client->{DEBUG} = 0;
+$client->{DEBUG} = 1;
 
 ok( $client->connect, "could connect and grab database" );
 
