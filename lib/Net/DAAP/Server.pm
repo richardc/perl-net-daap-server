@@ -2,7 +2,6 @@ package Net::DAAP::Server;
 use strict;
 use warnings;
 use POE::Component::Server::HTTP;
-use Net::DAAP::Server::ContentCodes;
 use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
@@ -78,7 +77,7 @@ sub _dmap_response {
     my $response = HTTP::Response->new( 200 );
     $response->content_type( 'application/x-dmap-tagged' );
     $response->content( dmap_pack $dmap );
-    #print Dump $dmap; if $self->uri =~ m{music} && $self->debug;
+    print Dump $dmap;# if $self->uri =~ m{music} && $self->debug;
     return $response;
 }
 
