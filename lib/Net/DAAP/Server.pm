@@ -2,6 +2,7 @@ package Net::DAAP::Server;
 use strict;
 use warnings;
 use Net::DAAP::Server::Store;
+use Net::DAAP::DMAP::Pack qw( dmap_pack );
 use base 'Class::Accessor::Fast';
 __PACKAGE__->mk_accessors(qw( path _db ));
 
@@ -44,7 +45,14 @@ sub new {
 }
 
 sub run {
+    my $self = shift;
+    my $r = shift;
+    print $r->uri->path . "\n";
     HTTP::Response->new( 500 );
+}
+
+sub server_info {
+    return dmap_pack([[]]);
 }
 
 sub db_class { "Net::DAAP::Server::Store" }
@@ -62,8 +70,8 @@ Richard Clamp <richardc@unixbeard.net>
 
 Copyright 2004 Richard Clamp.  All Rights Reserved.
 
-This program is free software; you can redistribute it
-and/or modify it under the same terms as Perl itself.
+This program is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
 
 =head1 SEE ALSO
 

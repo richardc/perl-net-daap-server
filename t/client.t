@@ -18,7 +18,6 @@ unless ($pid) {
     diag( "server now ready at: ". $d->url );
     while (my $c = $d->accept) {
         while (my $request = $c->get_request) {
-            print $request->as_string;
             my $response = $server->run($request);
             $c->send_response( $response );
         }
