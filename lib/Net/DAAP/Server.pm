@@ -6,7 +6,7 @@ use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( path tracks ));
+__PACKAGE__->mk_accessors(qw( path tracks uri ));
 
 our $VERSION = '1.21';
 
@@ -58,11 +58,13 @@ sub run {
     my (undef, $method, @args) = split m{/}, $r->uri->path;
     $method =~ s/-/_/g; # server-info => server_info
     #print Dump { $method => \@args };
+    local $self->{uri};
+    $self->uri( $r->uri );
     print $r->uri, "\n";
-    return $self->$method($r->uri, @args)
+    return $self->$method( @args )
       if $self->can( $method );
 
-    print "Can't $method: ". $r->uri;
+    print "Can't $method: ". $self->uri;
     HTTP::Response->new( 500 );
 }
 
@@ -72,6 +74,7 @@ sub _dmap_response {
     my $response = HTTP::Response->new( 200 );
     $response->content_type( 'application/x-dmap-tagged' );
     $response->content( dmap_pack $dmap );
+    print Dump $dmap if $self->uri =~ m{music};
     return $response;
 }
 
@@ -120,9 +123,8 @@ sub logout { HTTP::Response->new( 200 ) }
 
 sub update {
     my $self = shift;
-    my $uri  = shift;
     # XXX hacky - nothing to update - don't answer
-    sleep if $uri =~ m{revision-number=42};
+    sleep if $self->uri =~ m{revision-number=42};
 
     $self->_dmap_response( [[ 'dmap.updateresponse' => [
         [ 'dmap.status'         => 200 ],
@@ -132,7 +134,6 @@ sub update {
 
 sub databases {
     my $self = shift;
-    my $uri  = shift;
     unless (@_) { # all databases
         return $self->_dmap_response( [[ 'daap.serverdatabases' => [
             [ 'dmap.status' => 200 ],
@@ -155,7 +156,7 @@ sub databases {
     my $database_id = shift;
     my $action = shift;
     if ($action eq 'items') {
-        my $tracks = $self->_all_tracks( $uri );
+        my $tracks = $self->_all_tracks;
         return $self->_dmap_response( [[ 'daap.databasesongs' => [
             [ 'dmap.status' => 200 ],
             [ 'dmap.updatetype' => 0 ],
@@ -165,14 +166,13 @@ sub databases {
            ]]] );
     }
     if ($action eq 'containers') {
-        return $self->_playlists( $uri => @_ );
+        return $self->_playlists( @_ );
     }
 }
 
 sub _playlists {
     my $self = shift;
-    my $uri = shift;
-    return $self->_playlist_songs($uri => @_) if @_ && $_[1] eq 'items';
+    return $self->_playlist_songs( @_ ) if @_ && $_[1] eq 'items';
 
     $self->_dmap_response( [[ 'daap.databaseplaylists' => [
         [ 'dmap.status'              => 200 ],
@@ -194,14 +194,13 @@ sub _playlists {
 
 sub _all_tracks {
     my $self = shift;
-    my $uri  = shift;
     my @tracks;
     for my $track (values %{ $self->tracks }) {
         push @tracks, [ 'dmap.listingitem' => [
             map {
                 (my $field = $_) =~ s{[.-]}{_}g;
                 [ $_ => $track->$field() ]
-            } $self->wanted_fields( $uri ),
+            } $self->wanted_fields,
            ] ];
     }
     return \@tracks;
@@ -209,15 +208,13 @@ sub _all_tracks {
 
 sub wanted_fields {
     my $self = shift;
-    my $uri  = shift;
-    $uri =~ m{meta=(.*?)&};
+    $self->uri =~ m{meta=(.*?)&};
     return split /,/, $1;
 }
 
 sub _playlist_songs {
     my $self = shift;
-    my $uri  = shift;
-    my $tracks = $self->_all_tracks( $uri );
+    my $tracks = $self->_all_tracks;
     $self->_dmap_response( [[ 'daap.playlistsongs' => [
         [ 'dmap.status' => 200 ],
         [ 'dmap.updatetype' => 0 ],
