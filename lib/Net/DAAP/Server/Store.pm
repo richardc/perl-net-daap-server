@@ -4,7 +4,6 @@ use warnings;
 use base qw( Class::Persist );
 __PACKAGE__->mk_accessors(qw( path ));
 use File::Find::Rule;
-use MP3::Info;
 require Net::DAAP::Server::Store::Item;
 
 my @modules;
@@ -31,12 +30,8 @@ sub open {
     Class::Persist->dbh( $dbh );
 
     $self->create_database;
-    for my $file (find( name => "*.mp3", in => $self->path)) {
-        print "Scanning $file\n";
-        my $tag = MP3::Info->new( $file );
-        use YAML;
-        print Dump $tag;
-    }
+    Net::DAAP::Server::Store::Item->new_from_file( $_ )
+        for find( name => "*.mp3", in => $self->path );
 }
 
 sub database_file {
