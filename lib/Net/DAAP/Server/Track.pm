@@ -18,6 +18,12 @@ __PACKAGE__->mk_accessors(qw(
       daap_songtrackcount daap_songtracknumber daap_songuserrating
       daap_songyear daap_songdatakind daap_songdataurl
       com_apple_itunes_norm_volume
+
+      daap_songgrouping daap_songcodectype daap_songcodecsubtype
+      com_apple_itunes_itms_songid com_apple_itunes_itms_artistid
+      com_apple_itunes_itms_playlistid com_apple_itunes_itms_composerid
+      com_apple_itunes_itms_genreid
+
      ));
 
 my $i;
@@ -29,10 +35,11 @@ sub new_from_file {
 
     my $tag = MP3::Info->new( $file );
 
-    $self->dmap_itemid( ++$i );
+    my @stat = stat $file;
+    $self->dmap_itemid( $stat[1] );
     $self->dmap_itemname( $tag->title );
     $self->dmap_itemkind( 2 ); # music
-    $self->dmap_persistentid( undef ); # blah, this should be some 64 bit thing
+    $self->dmap_persistentid( $stat[1] ); # blah, this should be some 64 bit thing
     $self->daap_songalbum( $tag->album );
     $self->daap_songartist( $tag->artist );
     $self->daap_songbitrate( $tag->bitrate );
@@ -45,8 +52,8 @@ sub new_from_file {
     #
     $self->daap_songcompilation( 0 );
     # $self->daap_songcomposer( );
-    $self->daap_songdateadded( (stat $file)[10] );
-    $self->daap_songdatemodified( (stat _)[9] );
+    $self->daap_songdateadded( $stat[10] );
+    $self->daap_songdatemodified( $stat[9] );
     # $self->daap_songdisccount( );
     # $self->daap_songdiscnumber( );
     # $self->daap_songdisabled( );
@@ -62,10 +69,10 @@ sub new_from_file {
     # $self->daap_songstoptime( );
     # $self->daap_songtime( );
     my ($number, $count) = split m{/}, $tag->tracknum;
-    $self->daap_songtrackcount( $count );
-    $self->daap_songtracknumber( $number );
+    $self->daap_songtrackcount( $count || 0);
+    $self->daap_songtracknumber( $number || 0 );
     # $self->daap_songuserrating( );
-    $self->daap_songyear( $tag->year );
+    $self->daap_songyear( $tag->year || undef );
     # $self->daap_songdatakind( );
     # $self->daap_songdataurl( );
     # $self->com_apple_itunes_norm_volume( );

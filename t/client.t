@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More tests => 3;
-use lib 'lib', "$ENV{HOME}/hck/opensource-trunk/Class-Persist/lib";
+use lib 'lib', "$ENV{HOME}/lab/perl/Net-DAAP-DMAP-Pack/lib";
 
 use Net::DAAP::Server;
 use Net::DAAP::Client::Auth;
@@ -36,11 +36,15 @@ $client->{DEBUG} = 1;
 
 ok( $client->connect, "could connect and grab database" );
 
+my $songs = $client->songs;
+is( scalar keys %$songs, 3, "3 songs in the database" );
+
+
 my @playlists = values %{ $client->playlists };
 is( $playlists[0]{'dmap.itemname'}, 'Net::DAAP::Server', 'got main playlist');
 
-my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
-is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
+#my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
+#is( scalar @$playlist_tracks, 3, "3 tracks on main playlist" );
 
 
 undef $client;

@@ -57,7 +57,8 @@ sub run {
     $method =~ s/-/_/g; # server-info => server_info
     use YAML;
     #print Dump { $method => \@args };
-    print $r->uri->path, "\n";
+    print $r->uri, "\n";
+    local $self->{uri} = $r->uri;
     if ($self->can( $method )) {
         my $response = HTTP::Response->new( 200 );
         $response->content_type( 'application/x-dmap-tagged' );
@@ -131,7 +132,7 @@ sub databases {
                     [ 'dmap.itemid' =>  35 ],
                     [ 'dmap.persistentid' => '13950142391337751523' ],
                     [ 'dmap.itemname' => __PACKAGE__ ],
-                    [ 'dmap.itemcount' => 3 ],
+                    [ 'dmap.itemcount' => scalar keys %{ $self->tracks } ],
                     [ 'dmap.containercount' =>  1 ],
                    ],
                  ],
@@ -142,53 +143,13 @@ sub databases {
     my $database_id = shift;
     my $action = shift;
     if ($action eq 'items') {
-        return dmap_pack [[ 'daap.databasesongs' => [
-            [ 'dmap.status' =>                   200 ],
-            [ 'dmap.updatetype' =>                 0 ],
-            [ 'dmap.specifiedtotalcount' =>        3 ],
-            [ 'dmap.returnedcount' =>              3 ],
-            [ 'dmap.listing' => [
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum'  => '' ],
-                    [ 'daap.songartist' => 'Crysler' ],
-                    [ 'daap.songcompilation' => 0 ],
-                    [ 'daap.songformat' => 'mp3' ],
-                    [ 'dmap.itemid' => 36 ],
-                    [ 'dmap.itemname' => 'Insomnia - mastered' ],
-                    [ 'dmap.persistentid' =>     '13950142391337751539' ],
-                    [ 'daap.songsize' =>     4453814 ],
-                    [ 'daap.songtrackcount' =>     3 ],
-                    [ 'daap.songtracknumber' =>     1 ]
-                   ],
-                 ],
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum' =>     '' ],
-                    [ 'daap.songartist' =>     'Crysler' ],
-                    [ 'daap.songcompilation' =>     0    ],
-                    [ 'daap.songformat' =>     'mp3'     ],
-                    [ 'dmap.itemid' =>     37            ],
-                    [ 'dmap.itemname' =>     'Games - mastered' ],
-                    [ 'dmap.persistentid' =>     '13950142391337751540' ],
-                    [ 'daap.songsize' => 3436916   ],
-                    [ 'daap.songtrackcount' => 3   ],
-                    [ 'daap.songtracknumber' => 2  ],
-                   ],
-                 ],
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum' => ''   ],
-                    [ 'daap.songartist' => 'Crysler'  ],
-                    [ 'daap.songcompilation' => 0  ],
-                    [ 'daap.songformat' => 'mp3'  ],
-                    [ 'dmap.itemid' => 38  ],
-                    [ 'dmap.itemname' => 'Your Voice - mastered'  ],
-                    [ 'dmap.persistentid' => '13950142391337751541'  ],
-                    [ 'daap.songsize' => 6554061  ],
-                    [ 'daap.songtrackcount' => 3 ],
-                    [ 'daap.songtracknumber' => 3  ]
-                   ]
-                 ]
-               ]
-             ],
+        my $tracks = $self->_all_tracks;
+        dmap_pack [[ 'daap.databasesongs' => [
+            [ 'dmap.status' => 200 ],
+            [ 'dmap.updatetype' => 0 ],
+            [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
+            [ 'dmap.returnedcount' => scalar @$tracks ],
+            [ 'dmap.listing' => $tracks ]
            ]]];
     }
     if ($action eq 'containers') {
@@ -218,55 +179,35 @@ sub _playlists {
        ]]];
 }
 
+sub _all_tracks {
+    my $self = shift;
+    my @tracks;
+    for my $track (values %{ $self->tracks }) {
+        push @tracks, [ 'dmap.listingitem' => [
+            map {
+                (my $field = $_) =~ s{[.-]}{_}g;
+                [ $_ => $track->$field() ]
+            } $self->wanted_fields,
+           ] ];
+    }
+    return \@tracks;
+}
+
+sub wanted_fields {
+    my $self = shift;
+    $self->{uri} =~ m{meta=(.*?)&};
+    return split /,/, $1;
+}
+
 sub _playlist_songs {
+    my $self = shift;
+    my $tracks = $self->_all_tracks;
     dmap_pack [[ 'daap.playlistsongs' => [
         [ 'dmap.status' => 200 ],
         [ 'dmap.updatetype' => 0 ],
-        [ 'dmap.specifiedtotalcount' => 3 ],
-        [ 'dmap.returnedcount'       => 3 ],
-
-            [ 'dmap.listing' => [
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum'  => '' ],
-                    [ 'daap.songartist' => 'Crysler' ],
-                    [ 'daap.songcompilation' => 0 ],
-                    [ 'daap.songformat' => 'mp3' ],
-                    [ 'dmap.itemid' => 36 ],
-                    [ 'dmap.itemname' => 'Insomnia - mastered' ],
-                    [ 'dmap.persistentid' =>     '13950142391337751539' ],
-                    [ 'daap.songsize' =>     4453814 ],
-                    [ 'daap.songtrackcount' =>     3 ],
-                    [ 'daap.songtracknumber' =>     1 ]
-                   ],
-                 ],
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum' =>     '' ],
-                    [ 'daap.songartist' =>     'Crysler' ],
-                    [ 'daap.songcompilation' =>     0    ],
-                    [ 'daap.songformat' =>     'mp3'     ],
-                    [ 'dmap.itemid' =>     37            ],
-                    [ 'dmap.itemname' =>     'Games - mastered' ],
-                    [ 'dmap.persistentid' =>     '13950142391337751540' ],
-                    [ 'daap.songsize' => 3436916   ],
-                    [ 'daap.songtrackcount' => 3   ],
-                    [ 'daap.songtracknumber' => 2  ],
-                   ],
-                 ],
-                [ 'dmap.listingitem' => [
-                    [ 'daap.songalbum' => ''   ],
-                    [ 'daap.songartist' => 'Crysler'  ],
-                    [ 'daap.songcompilation' => 0  ],
-                    [ 'daap.songformat' => 'mp3'  ],
-                    [ 'dmap.itemid' => 38  ],
-                    [ 'dmap.itemname' => 'Your Voice - mastered'  ],
-                    [ 'dmap.persistentid' => '13950142391337751541'  ],
-                    [ 'daap.songsize' => 6554061  ],
-                    [ 'daap.songtrackcount' => 3 ],
-                    [ 'daap.songtracknumber' => 3  ]
-                   ],
-                 ],
-               ],
-             ],
+        [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
+        [ 'dmap.returnedcount'       => scalar @$tracks ],
+        [ 'dmap.listing' => $tracks ]
        ]]];
 }
 
