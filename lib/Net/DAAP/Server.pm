@@ -46,7 +46,7 @@ sub new {
         $self->tracks->{ $track->dmap_itemid } = $track;
     }
     use YAML;
-    print Dump $self;
+    #print Dump $self;
     return $self;
 }
 
@@ -56,7 +56,8 @@ sub run {
     my (undef, $method, @args) = split m{/}, $r->uri->path;
     $method =~ s/-/_/g; # server-info => server_info
     use YAML;
-    print Dump { $method => \@args };
+    #print Dump { $method => \@args };
+    print $r->uri->path, "\n";
     if ($self->can( $method )) {
         my $response = HTTP::Response->new( 200 );
         $response->content_type( 'application/x-dmap-tagged' );
@@ -108,7 +109,9 @@ sub login {
 
 sub logout { return }
 
+my $one;
 sub update {
+    sleep if $one++;
     dmap_pack [[ 'dmap.updateresponse' => [
         [ 'dmap.status'         => 200 ],
         [ 'dmap.serverrevision' =>  42 ],
@@ -129,7 +132,7 @@ sub databases {
                     [ 'dmap.persistentid' => '13950142391337751523' ],
                     [ 'dmap.itemname' => __PACKAGE__ ],
                     [ 'dmap.itemcount' => 3 ],
-                    [ 'dmap.containercount' =>  6 ],
+                    [ 'dmap.containercount' =>  1 ],
                    ],
                  ],
                ],

@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib 'lib', "$ENV{HOME}/hck/opensource-trunk/Class-Persist/lib";
+use lib 'lib', "$ENV{HOME}/lab/perl/Net-DAAP-DMAP-Pack/lib";
 use HTTP::Daemon;
 use Net::DAAP::Server;
 
-my $path = shift || 't/lib/';
+my $path = shift || 't/share';
 
 my $server = Net::DAAP::Server->new(path => $path);
 my $d = HTTP::Daemon->new(
@@ -15,7 +15,6 @@ my $d = HTTP::Daemon->new(
 print "Please contact me at: ", $d->url, "\n";
 while (my $c = $d->accept) {
     while (my $request = $c->get_request) {
-        print $request->as_string;
         my $response = $server->run($request);
         $c->send_response( $response );
     }
