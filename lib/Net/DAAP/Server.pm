@@ -1,7 +1,10 @@
 package Net::DAAP::Server;
 use strict;
 use warnings;
+use Net::DAAP::Server::Store;
 use base 'Class::Accessor::Fast';
+__PACKAGE__->mk_accessors(qw( path _db ));
+
 our $VERSION = '1.21';
 
 =head1 NAME
@@ -12,7 +15,7 @@ Net::DAAP::Server - Provide a DAAP Server
 
  use Net::DAAP::Server;
 
- my $server = Net::DAAP::Server->new();
+ my $server = Net::DAAP::Server->new(path => '/my/mp3/collection');
  my $d = HTTP::Daemon->new(
    LocalAddr => 'localhost',
    LocalPort => 3689,
@@ -32,6 +35,15 @@ Net::DAAP::Server - Provide a DAAP Server
 =head1 DESCRIPTION
 
 =cut
+
+sub new {
+    my $class = shift;
+    my $self = $class->SUPER::new( { @_ } );
+    $self->_db( $self->db_class->open( $self->path ) );
+    return $self;
+}
+
+sub db_class { "Net::DAAP::Server::Store" }
 
 
 1;
