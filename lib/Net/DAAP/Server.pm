@@ -1,8 +1,9 @@
 package Net::DAAP::Server;
 use strict;
 use warnings;
+use Net::DAAP::Server::ContentCodes;
 use Net::DAAP::Server::Track;
-use Net::DAAP::DMAP::Pack qw( dmap_pack );
+use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
 use base 'Class::Accessor::Fast';
 __PACKAGE__->mk_accessors(qw( path tracks uri ));
@@ -97,7 +98,7 @@ sub content_codes {
             [ 'dmap.contentcodesnumber' => $_->{ID}   ],
             [ 'dmap.contentcodesname'   => $_->{NAME} ],
             [ 'dmap.contentcodestype'   => $_->{TYPE} ],
-           ] ] } values %Net::DAAP::DMAP::Pack::types,
+           ] ] } values %$Net::DAAP::DMAP::Types,
        ]]];
 }
 

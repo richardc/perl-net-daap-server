@@ -40,6 +40,7 @@ sub new_from_file {
     $self->dmap_itemname( $tag->title );
     $self->dmap_itemkind( 2 ); # music
     $self->dmap_persistentid( $stat[1] ); # blah, this should be some 64 bit thing
+
     $self->daap_songalbum( $tag->album );
     $self->daap_songartist( $tag->artist );
     $self->daap_songbitrate( $tag->bitrate );
@@ -76,6 +77,9 @@ sub new_from_file {
     # $self->daap_songdatakind( );
     # $self->daap_songdataurl( );
     # $self->com_apple_itunes_norm_volume( );
+
+    $self->daap_songcodectype( 1836082535 ); # mp3?
+    $self->daap_songcodecsubtype( 3 ); # or is this mp3?
 
     return $self;
 }

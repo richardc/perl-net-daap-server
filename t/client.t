@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::More tests => 4;
-use lib 'lib', "$ENV{HOME}/lab/perl/Net-DAAP-DMAP-Pack/lib";
+use lib 'lib', "$ENV{HOME}/lab/local/dapple/lib";
 
 use Net::DAAP::Server;
 use Net::DAAP::Client;
