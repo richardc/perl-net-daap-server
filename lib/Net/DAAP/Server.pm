@@ -1,10 +1,10 @@
 package Net::DAAP::Server;
 use strict;
 use warnings;
-use Net::DAAP::Server::Store;
+use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP::Pack qw( dmap_pack );
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( path _db ));
+__PACKAGE__->mk_accessors(qw( path tracks ));
 
 our $VERSION = '1.21';
 
@@ -39,8 +39,9 @@ Net::DAAP::Server - Provide a DAAP Server
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER::new( { @_ } );
-    $self->_db( $self->db_class->new->path( $self->path )->open );
+    my $self = $class->SUPER::new( { tracks => [], @_ } );
+    push { $self->tracks }, Net::DAAP::Server::Track->new_from_file( $_ )
+      for find( name => "*.mp3", in => $self->path );
     return $self;
 }
 
