@@ -57,12 +57,15 @@ sub find_tracks {
 sub handler {
     my $self = shift;
     my ($request, $response) = @_;
-    my (undef, $method, @args) = split m{/}, $request->uri->path;
-    $method =~ s/-/_/g; # server-info => server_info
 
     local $self->{uri};
     $self->uri( $request->uri );
     print $request->uri, "\n" if $self->debug;
+
+    my %params = map { split /=/, $_, 2 } split /&/, $self->uri->query;
+    my (undef, $method, @args) = split m{/}, $request->uri->path;
+    $method =~ s/-/_/g; # server-info => server_info
+
     if ($self->can( $method )) {
         my $res = $self->$method( @args );
         #print Dump $res;
@@ -83,7 +86,7 @@ sub _dmap_response {
     my $response = HTTP::Response->new( 200 );
     $response->content_type( 'application/x-dmap-tagged' );
     $response->content( dmap_pack $dmap );
-    print Dump $dmap if $self->debug && $self->uri =~/type=photo/;
+    #print Dump $dmap if $self->debug && $self->uri =~/type=photo/;
     return $response;
 }
 
@@ -222,12 +225,13 @@ sub always_answer {
     qw( dmap.itemname dmap.itemkind dmap.itemid );
 }
 
+
 sub _all_tracks {
     my $self = shift;
     my @tracks;
 
     my %chunks = map { split /=/, $_, 2 } split /&/, $self->uri->query;
-    my @fields = $self->always_answer, split /(?:,|%2C)/, $chunks{meta};
+    my @fields = ($self->always_answer, split /(?:,|%2C)/, $chunks{meta});
 
     for my $track (values %{ $self->tracks }) {
         my %values = ( com_apple_itunes_smart_playlist => 0, %$track );
@@ -235,6 +239,11 @@ sub _all_tracks {
         push @tracks, [ 'dmap.listingitem' => [
             map {
                 (my $field = $_) =~ s{[.-]}{_}g;
+                # kludge
+                if ($field eq 'dpap_thumb') {
+                    $_ = 'dpap.picturedata';
+                    $field = 'dpap_picturedata';
+                }
                 [ $_ => $track->$field() ]
             } @fields ] ];
     }
