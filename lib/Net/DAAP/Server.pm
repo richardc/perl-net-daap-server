@@ -1,14 +1,10 @@
 package Net::DAAP::Server;
 use strict;
 use warnings;
-use POE::Component::Server::HTTP;
-use Net::Rendezvous::Publish;
 use Net::DAAP::Server::Track;
-use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
-use HTTP::Daemon;
-use URI::Escape;
-use base 'Class::Accessor::Fast';
+use Net::DMAP::Server;
+use base qw( Net::DMAP::Server );
 __PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri publisher service ));
 
 our $VERSION = '1.21';
@@ -37,70 +33,12 @@ use YAML;
 
 sub protocol { 'daap' }
 
-sub new {
-    my $class = shift;
-    my $self = $class->SUPER::new( { tracks => {}, @_ } );
-    $self->find_tracks;
-    #print Dump $self;
-    $self->httpd( POE::Component::Server::HTTP->new(
-        Port => $self->port,
-        ContentHandler => { '/' => sub { $self->handler(@_) } },
-       ) );
-
-    my $publisher = Net::Rendezvous::Publish->new
-      or die "couldn't make a Responder object";
-    $self->publisher( $publisher );
-    $self->service( $publisher->publish(
-        name => ref $self,
-        type => '_'.$self->protocol.'._tcp',
-        port => $self->port,
-       ) );
-
-    return $self;
-}
-
 sub find_tracks {
     my $self = shift;
     for my $file ( find name => "*.mp3", in => $self->path ) {
         my $track = Net::DAAP::Server::Track->new_from_file( $file );
         $self->tracks->{ $track->dmap_itemid } = $track;
     }
-}
-
-sub handler {
-    my $self = shift;
-    my ($request, $response) = @_;
-
-    local $self->{uri};
-    $self->uri( $request->uri );
-    print $request->uri, "\n" if $self->debug;
-
-    my %params = map { split /=/, $_, 2 } split /&/, $self->uri->query;
-    my (undef, $method, @args) = split m{/}, $request->uri->path;
-    $method =~ s/-/_/g; # server-info => server_info
-
-    if ($self->can( $method )) {
-        my $res = $self->$method( @args );
-        #print Dump $res;
-        $response->code( $res->code );
-        $response->content( $res->content );
-        $response->content_type( $res->content_type );
-        return $response->code;
-    }
-
-    print "Can't $method: ". $self->uri;
-    $response->code( 500 );
-    return 500;
-}
-
-sub _dmap_response {
-    my $self = shift;
-    my $dmap = shift;
-    my $response = HTTP::Response->new( 200 );
-    $response->content_type( 'application/x-dmap-tagged' );
-    $response->content( dmap_pack $dmap );
-    #print Dump $dmap if $self->debug && $self->uri =~/type=photo/;
-    return $response;
 }
 
 sub server_info {
@@ -124,38 +62,6 @@ sub server_info {
        ]]] );
 }
 
-sub content_codes {
-    my $self = shift;
-    $self->_dmap_response( [[ 'dmap.contentcodesresponse' => [
-        [ 'dmap.status'             => 200 ],
-        map { [ 'dmap.dictionary' => [
-            [ 'dmap.contentcodesnumber' => $_->{ID}   ],
-            [ 'dmap.contentcodesname'   => $_->{NAME} ],
-            [ 'dmap.contentcodestype'   => $_->{TYPE} ],
-           ] ] } values %$Net::DAAP::DMAP::Types,
-       ]]] );
-}
-
-sub login {
-    my $self = shift;
-    $self->_dmap_response( [[ 'dmap.loginresponse' => [
-        [ 'dmap.status'    => 200 ],
-        [ 'dmap.sessionid' =>  42 ],
-       ]]] );
-}
-
-sub logout { HTTP::Response->new( 200 ) }
-
-sub update {
-    my $self = shift;
-    return HTTP::Response->new( RC_WAIT )
-      if $self->uri =~ m{revision-number=42};
-
-    $self->_dmap_response( [[ 'dmap.updateresponse' => [
-        [ 'dmap.status'         => 200 ],
-        [ 'dmap.serverrevision' =>  42 ],
-       ]]] );
-}
 
 sub databases {
     my $self = shift;
@@ -249,7 +155,7 @@ sub item_field {
         $field = 'dpap.picturedata';
     }
 
-    [ $field => $track->$method() ]
+    [ $field => eval { $track->$method() } ]
 }
 
 sub response_tracks {
@@ -260,16 +166,25 @@ sub response_tracks {
     return values %{ $self->tracks }
 }
 
+sub uniq {
+    my %seen;
+    return grep { !$seen{$_}++ } @_;
+}
+
+sub response_fields {
+    my $self = shift;
+
+    my %chunks = map { split /=/, $_, 2 } split /&/, $self->uri->query;
+    my @fields = uniq ($self->always_answer, split /(?:,|%2C)/, $chunks{meta});
+    return @fields;
+}
+
 
 sub _all_tracks {
     my $self = shift;
     my @tracks;
 
-    my %chunks = map { split /=/, $_, 2 } split /&/, $self->uri->query;
-    my @fields = ($self->always_answer, split /(?:,|%2C)/, $chunks{meta});
-
-    print Dump \@fields;
-
+    my @fields = $self->response_fields;
     for my $track ($self->response_tracks) {
         push @tracks, [ 'dmap.listingitem' => [
             map { $self->item_field( $track => $_ ) } @fields ] ];
