@@ -44,7 +44,7 @@ sub new_from_file {
     $self->daap_songalbum( $tag->album );
     $self->daap_songartist( $tag->artist );
     $self->daap_songbitrate( $tag->bitrate );
-    $self->daap_songbeatsperminute( undef );
+    $self->daap_songbeatsperminute( 0 );
     $self->daap_songcomment( $tag->comment );
     # from blech:
     # if ($rtag->{TCP} || $rtag->{TCMP}) {
@@ -55,28 +55,29 @@ sub new_from_file {
     # $self->daap_songcomposer( );
     $self->daap_songdateadded( $stat[10] );
     $self->daap_songdatemodified( $stat[9] );
-    # $self->daap_songdisccount( );
-    # $self->daap_songdiscnumber( );
-    # $self->daap_songdisabled( );
-    # $self->daap_songeqpreset( );
+    $self->daap_songdisccount( 0 );
+    $self->daap_songdiscnumber( 0 );
+    $self->daap_songdisabled( 0 );
+    $self->daap_songeqpreset( '' );
     $file =~ m{\.(.*?)$};
     $self->daap_songformat( $1 );
-    # $self->daap_songgenre( );
+    $self->daap_songgenre( '' );
+    $self->daap_songgrouping( '' );
     # $self->daap_songdescription( );
     # $self->daap_songrelativevolume( );
-    # $self->daap_songsamplerate( );
+    $self->daap_songsamplerate( $tag->frequency * 1000 );
     $self->daap_songsize( -s $file );
-    # $self->daap_songstarttime( );
-    # $self->daap_songstoptime( );
-    # $self->daap_songtime( );
+    $self->daap_songstarttime( 0 );
+    $self->daap_songstoptime( 0 );
+    $self->daap_songtime( int $tag->secs );
     my ($number, $count) = split m{/}, $tag->tracknum;
     $self->daap_songtrackcount( $count || 0);
     $self->daap_songtracknumber( $number || 0 );
-    # $self->daap_songuserrating( );
+    $self->daap_songuserrating( 0 );
     $self->daap_songyear( $tag->year || undef );
-    # $self->daap_songdatakind( );
+    $self->daap_songdatakind( 0 );
     # $self->daap_songdataurl( );
-    # $self->com_apple_itunes_norm_volume( );
+    $self->com_apple_itunes_norm_volume( 17502 );
 
     $self->daap_songcodectype( 1836082535 ); # mp3?
     $self->daap_songcodecsubtype( 3 ); # or is this mp3?
