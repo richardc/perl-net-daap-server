@@ -28,8 +28,6 @@ Net::DAAP::Server - Provide a DAAP Server
 
 =cut
 
-use YAML;
-
 sub protocol { 'daap' }
 
 sub find_tracks {
