@@ -70,15 +70,12 @@ sub new_from_file {
     my ($trackno, $trackco, $comp, $discno, $discco);
 
     if ($type eq 'MP3') {
-      # we need more info from the file if we're going to determine these 
+      # we need more info from the file if we're going to determine these
       my $rtag = MP3::Info::get_mp3tag( $file, 2, 1 ) || {};
 
       ($trackno, $trackco) = split m{/}, ($tag->{TRACKNUM} || "");
       $comp = ($rtag->{TCP} || $rtag->{TCMP}) ? 1 : 0;
-      ($discno, $discco) = split m{/}, ($rtag->{TPA} || $rtag->{TPOS} || ""); 
-      # TODO this is getting set right, but when it's passed into 
-      # $self->daap_songdiscnumber it doesn't work, even though AAC disc 
-      # info does. Very odd.
+      ($discno, $discco) = ($rtag->{TPA} || $rtag->{TPOS} || "") =~ m{(\d+)\D*(\d+)?};
     }
 
     if ($type eq 'AAC') {
@@ -87,7 +84,7 @@ sub new_from_file {
       $comp    = $tag->{CPIL};
       $discco  = $tag->{DISK}->[1];
       $discno  = $tag->{DISK}->[0];
-    }    
+    }
 
     $self->daap_songtrackcount( $trackco || 0 );
     $self->daap_songtracknumber( $trackno || 0);
