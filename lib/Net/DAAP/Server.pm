@@ -48,7 +48,7 @@ sub server_info {
             [ 'dmap.status'             => 200 ],
             [ 'dmap.protocolversion'    => 2 ],
             [ 'daap.protocolversion'    => 3 ],
-            [ 'dmap.itemname'           => ref $self ],
+            [ 'dmap.itemname'           => $self->name ],
             [ 'dmap.loginrequired'      => 0 ],
             [ 'dmap.timeoutinterval'    => 1800 ],
             [ 'dmap.supportsautologout' => 0 ],
