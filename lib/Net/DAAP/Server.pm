@@ -235,7 +235,29 @@ sub _playlist_songs {
 # some things are always present in the listings returned, whether you
 # ask for them or not
 sub always_answer {
-    qw( dmap.itemname dmap.itemkind dmap.itemid );
+    qw( dmap.itemkind dmap.itemid dmap.itemname );
+}
+
+sub item_field {
+    my $self = shift;
+    my $track = shift;
+    my $field = shift;
+
+    (my $method = $field) =~  s{[.-]}{_}g;
+    # kludge
+    if ($field =~ /dpap\.(thumb|hires)/) {
+        $field = 'dpap.picturedata';
+    }
+
+    [ $field => $track->$method() ]
+}
+
+sub response_tracks {
+    my $self = shift;
+    if ($self->uri =~ /dpap.hires/ && $self->uri =~ /dmap.itemid:(\d+)/) {
+        return $self->tracks->{$1};
+    }
+    return values %{ $self->tracks }
 }
 
 
@@ -246,19 +268,11 @@ sub _all_tracks {
     my %chunks = map { split /=/, $_, 2 } split /&/, $self->uri->query;
     my @fields = ($self->always_answer, split /(?:,|%2C)/, $chunks{meta});
 
-    for my $track (values %{ $self->tracks }) {
-        my %values = ( com_apple_itunes_smart_playlist => 0, %$track );
+    print Dump \@fields;
 
+    for my $track ($self->response_tracks) {
         push @tracks, [ 'dmap.listingitem' => [
-            map {
-                (my $field = $_) =~ s{[.-]}{_}g;
-                # kludge
-                if ($field eq 'dpap_thumb') {
-                    $_ = 'dpap.picturedata';
-                    $field = 'dpap_picturedata';
-                }
-                [ $_ => $track->$field() ]
-            } @fields ] ];
+            map { $self->item_field( $track => $_ ) } @fields ] ];
     }
     return \@tracks;
 }
