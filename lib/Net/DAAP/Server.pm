@@ -174,6 +174,7 @@ sub _playlists {
     my $self = shift;
     return $self->_playlist_songs( @_ ) if @_ && $_[1] eq 'items';
 
+    my $tracks = $self->_all_tracks;
     $self->_dmap_response( [[ 'daap.databaseplaylists' => [
         [ 'dmap.status'              => 200 ],
         [ 'dmap.updatetype'          =>   0 ],
@@ -184,32 +185,12 @@ sub _playlists {
                 [ 'dmap.itemid'       => 39 ],
                 [ 'dmap.persistentid' => '13950142391337751524' ],
                 [ 'dmap.itemname'     => __PACKAGE__ ],
-                [ 'dmap.itemcount'    => 3 ],
+                [ 'dmap.itemcount'    => scalar @$tracks ],
                ],
              ],
            ],
          ],
        ]]] );
-}
-
-sub _all_tracks {
-    my $self = shift;
-    my @tracks;
-    for my $track (values %{ $self->tracks }) {
-        push @tracks, [ 'dmap.listingitem' => [
-            map {
-                (my $field = $_) =~ s{[.-]}{_}g;
-                [ $_ => $track->$field() ]
-            } $self->wanted_fields,
-           ] ];
-    }
-    return \@tracks;
-}
-
-sub wanted_fields {
-    my $self = shift;
-    $self->uri =~ m{meta=(.*?)&};
-    return split /,/, $1;
 }
 
 sub _playlist_songs {
@@ -222,6 +203,27 @@ sub _playlist_songs {
         [ 'dmap.returnedcount'       => scalar @$tracks ],
         [ 'dmap.listing' => $tracks ]
        ]]] );
+}
+
+
+sub _all_tracks {
+    my $self = shift;
+    my @tracks;
+
+    my @fields;
+    if ($self->uri =~ m{type=music}) {
+        $self->uri =~ m{meta=(.*?)&};
+        @fields = split /,/, $1;
+    }
+
+    for my $track (values %{ $self->tracks }) {
+        push @tracks, [ 'dmap.listingitem' => [
+            map {
+                (my $field = $_) =~ s{[.-]}{_}g;
+                [ $_ => $track->$field() ]
+            } @fields ] ];
+    }
+    return \@tracks;
 }
 
 1;

@@ -37,6 +37,8 @@ sub new_from_file {
 
     my @stat = stat $file;
     $self->dmap_itemid( $stat[1] );
+    $self->dmap_containeritemid( $stat[1] );
+
     $self->dmap_itemname( $tag->title );
     $self->dmap_itemkind( 2 ); # music
     $self->dmap_persistentid( $stat[1] ); # blah, this should be some 64 bit thing
