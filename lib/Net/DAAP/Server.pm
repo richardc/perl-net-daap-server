@@ -2,13 +2,14 @@ package Net::DAAP::Server;
 use strict;
 use warnings;
 use POE::Component::Server::HTTP;
+use Net::Rendezvous::Publish;
 use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
 use HTTP::Daemon;
 use URI::Escape;
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri ));
+__PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri publisher service ));
 
 our $VERSION = '1.21';
 
@@ -34,6 +35,8 @@ Net::DAAP::Server - Provide a DAAP Server
 
 use YAML;
 
+sub protocol { 'daap' }
+
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new( { tracks => {}, @_ } );
@@ -43,6 +46,16 @@ sub new {
         Port => $self->port,
         ContentHandler => { '/' => sub { $self->handler(@_) } },
        ) );
+
+    my $publisher = Net::Rendezvous::Publish->new
+      or die "couldn't make a Responder object";
+    $self->publisher( $publisher );
+    $self->service( $publisher->publish(
+        name => __PACKAGE__,
+        type => '_'.$self->protocol.'._tcp',
+        port => $self->port,
+       ) );
+
     return $self;
 }
 
