@@ -6,7 +6,7 @@ use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
 use base 'Class::Accessor::Fast';
-__PACKAGE__->mk_accessors(qw( path tracks uri ));
+__PACKAGE__->mk_accessors(qw( path tracks ));
 
 our $VERSION = '1.21';
 
@@ -39,6 +39,8 @@ Net::DAAP::Server - Provide a DAAP Server
 
 =cut
 
+use YAML;
+
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new( { tracks => {}, @_ } );
@@ -46,7 +48,6 @@ sub new {
         my $track = Net::DAAP::Server::Track->new_from_file( $file );
         $self->tracks->{ $track->dmap_itemid } = $track;
     }
-    use YAML;
     #print Dump $self;
     return $self;
 }
@@ -56,23 +57,27 @@ sub run {
     my $r = shift;
     my (undef, $method, @args) = split m{/}, $r->uri->path;
     $method =~ s/-/_/g; # server-info => server_info
-    use YAML;
     #print Dump { $method => \@args };
     print $r->uri, "\n";
-    local $self->{uri} = $r->uri;
-    if ($self->can( $method )) {
-        my $response = HTTP::Response->new( 200 );
-        $response->content_type( 'application/x-dmap-tagged' );
-        $response->content( $self->$method(@args) );
-        return $response;
-    }
+    return $self->$method($r->uri, @args)
+      if $self->can( $method );
 
-    print "Can't $method: ". $r->uri->path;
+    print "Can't $method: ". $r->uri;
     HTTP::Response->new( 500 );
 }
 
+sub _dmap_response {
+    my $self = shift;
+    my $dmap = shift;
+    my $response = HTTP::Response->new( 200 );
+    $response->content_type( 'application/x-dmap-tagged' );
+    $response->content( dmap_pack $dmap );
+    return $response;
+}
+
 sub server_info {
-    dmap_pack [[ 'dmap.serverinforesponse' => [
+    my $self = shift;
+    $self->_dmap_response( [[ 'dmap.serverinforesponse' => [
         [ 'dmap.status'             => 200 ],
         [ 'dmap.protocolversion'    => 2 ],
         [ 'daap.protocolversion'    => 3 ],
@@ -88,45 +93,48 @@ sub server_info {
         [ 'dmap.supportsindex'      => 0 ],
         [ 'dmap.supportsresolve'    => 0 ],
         [ 'dmap.databasescount'     => 1 ],
-       ]]];
+       ]]] );
 }
 
 sub content_codes {
-    dmap_pack [[ 'dmap.contentcodesresponse' => [
+    my $self = shift;
+    $self->_dmap_response( [[ 'dmap.contentcodesresponse' => [
         [ 'dmap.status'             => 200 ],
         map { [ 'dmap.dictionary' => [
             [ 'dmap.contentcodesnumber' => $_->{ID}   ],
             [ 'dmap.contentcodesname'   => $_->{NAME} ],
             [ 'dmap.contentcodestype'   => $_->{TYPE} ],
            ] ] } values %$Net::DAAP::DMAP::Types,
-       ]]];
+       ]]] );
 }
 
 sub login {
-    dmap_pack [[ 'dmap.loginresponse' => [
+    my $self = shift;
+    $self->_dmap_response( [[ 'dmap.loginresponse' => [
         [ 'dmap.status'    => 200 ],
         [ 'dmap.sessionid' =>  42 ],
-       ]]];
+       ]]] );
 }
 
-sub logout { return }
-
+sub logout { HTTP::Response->new( 200 ) }
 
 sub update {
     my $self = shift;
+    my $uri  = shift;
     # XXX hacky - nothing to update - don't answer
-    sleep if $self->uri =~ m{revision-number=42};
+    sleep if $uri =~ m{revision-number=42};
 
-    dmap_pack [[ 'dmap.updateresponse' => [
+    $self->_dmap_response( [[ 'dmap.updateresponse' => [
         [ 'dmap.status'         => 200 ],
         [ 'dmap.serverrevision' =>  42 ],
-       ]]];
+       ]]] );
 }
 
 sub databases {
     my $self = shift;
+    my $uri  = shift;
     unless (@_) { # all databases
-        return dmap_pack [[ 'daap.serverdatabases' => [
+        return $self->_dmap_response( [[ 'daap.serverdatabases' => [
             [ 'dmap.status' => 200 ],
             [ 'dmap.updatetype' =>  0 ],
             [ 'dmap.specifiedtotalcount' =>  1 ],
@@ -142,30 +150,31 @@ sub databases {
                  ],
                ],
              ],
-           ]]];
+           ]]] );
     }
     my $database_id = shift;
     my $action = shift;
     if ($action eq 'items') {
-        my $tracks = $self->_all_tracks;
-        return dmap_pack [[ 'daap.databasesongs' => [
+        my $tracks = $self->_all_tracks( $uri );
+        return $self->_dmap_response( [[ 'daap.databasesongs' => [
             [ 'dmap.status' => 200 ],
             [ 'dmap.updatetype' => 0 ],
             [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
             [ 'dmap.returnedcount' => scalar @$tracks ],
             [ 'dmap.listing' => $tracks ]
-           ]]];
+           ]]] );
     }
     if ($action eq 'containers') {
-        return $self->_playlists( @_ );
+        return $self->_playlists( $uri => @_ );
     }
 }
 
 sub _playlists {
     my $self = shift;
-    return $self->_playlist_songs(@_) if @_ && $_[1] eq 'items';
+    my $uri = shift;
+    return $self->_playlist_songs($uri => @_) if @_ && $_[1] eq 'items';
 
-    return dmap_pack [[ 'daap.databaseplaylists' => [
+    $self->_dmap_response( [[ 'daap.databaseplaylists' => [
         [ 'dmap.status'              => 200 ],
         [ 'dmap.updatetype'          =>   0 ],
         [ 'dmap.specifiedtotalcount' =>   1 ],
@@ -180,18 +189,19 @@ sub _playlists {
              ],
            ],
          ],
-       ]]];
+       ]]] );
 }
 
 sub _all_tracks {
     my $self = shift;
+    my $uri  = shift;
     my @tracks;
     for my $track (values %{ $self->tracks }) {
         push @tracks, [ 'dmap.listingitem' => [
             map {
                 (my $field = $_) =~ s{[.-]}{_}g;
                 [ $_ => $track->$field() ]
-            } $self->wanted_fields,
+            } $self->wanted_fields( $uri ),
            ] ];
     }
     return \@tracks;
@@ -199,25 +209,23 @@ sub _all_tracks {
 
 sub wanted_fields {
     my $self = shift;
-    $self->uri =~ m{meta=(.*?)&};
+    my $uri  = shift;
+    $uri =~ m{meta=(.*?)&};
     return split /,/, $1;
 }
 
 sub _playlist_songs {
     my $self = shift;
-    my $tracks = $self->_all_tracks;
-    dmap_pack [[ 'daap.playlistsongs' => [
+    my $uri  = shift;
+    my $tracks = $self->_all_tracks( $uri );
+    $self->_dmap_response( [[ 'daap.playlistsongs' => [
         [ 'dmap.status' => 200 ],
         [ 'dmap.updatetype' => 0 ],
         [ 'dmap.specifiedtotalcount' => scalar @$tracks ],
         [ 'dmap.returnedcount'       => scalar @$tracks ],
         [ 'dmap.listing' => $tracks ]
-       ]]];
+       ]]] );
 }
-
-
-sub db_class { "Net::DAAP::Server::Store" }
-
 
 1;
 __END__
