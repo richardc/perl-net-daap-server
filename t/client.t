@@ -5,7 +5,7 @@ use Test::More tests => 4;
 use lib 'lib', "$ENV{HOME}/lab/local/dapple/lib";
 use POE;
 use Net::DAAP::Server;
-use Net::DAAP::Client;
+use Net::DAAP::Client 0.4;
 
 my $port = 23689;
 my $pid = fork;
@@ -14,16 +14,19 @@ unless ($pid) {
     my $server = Net::DAAP::Server->new( path  => 't/share',
                                          port  => $port,
                                          debug => 0);
+    diag( "starting kernel" );
     $poe_kernel->run;
     exit;
 }
 
-sleep 1; # give it time to warm up
+sleep 2; # give it time to warm up
 diag( "Now testing" );
 
-my $client = Net::DAAP::Client->new( SERVER_HOST => 'localhost' );
-$client->{SERVER_PORT} = $port;
-$client->{DEBUG} = 0;
+my $client = Net::DAAP::Client->new(
+    SERVER_HOST => 'localhost',
+    SERVER_PORT => $port,
+    DEBUG       => 0,
+   );
 
 ok( $client->connect, "could connect and grab database" );
 my $songs = $client->songs;
