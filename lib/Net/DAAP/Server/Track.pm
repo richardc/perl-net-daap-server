@@ -26,7 +26,6 @@ __PACKAGE__->mk_accessors(qw(
       dmap_containeritemid
      ));
 
-my $i;
 sub new_from_file {
     my $class = shift;
     my $file = shift;

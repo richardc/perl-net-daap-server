@@ -6,6 +6,7 @@ use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP qw( dmap_pack );
 use File::Find::Rule;
 use HTTP::Daemon;
+use URI::Escape;
 use base 'Class::Accessor::Fast';
 __PACKAGE__->mk_accessors(qw( debug path tracks port httpd uri ));
 
@@ -36,16 +37,21 @@ use YAML;
 sub new {
     my $class = shift;
     my $self = $class->SUPER::new( { tracks => {}, @_ } );
-    for my $file ( find name => "*.mp3", in => $self->path ) {
-        my $track = Net::DAAP::Server::Track->new_from_file( $file );
-        $self->tracks->{ $track->dmap_itemid } = $track;
-    }
+    $self->find_tracks;
     #print Dump $self;
     $self->httpd( POE::Component::Server::HTTP->new(
         Port => $self->port,
         ContentHandler => { '/' => sub { $self->handler(@_) } },
        ) );
     return $self;
+}
+
+sub find_tracks {
+    my $self = shift;
+    for my $file ( find name => "*.mp3", in => $self->path ) {
+        my $track = Net::DAAP::Server::Track->new_from_file( $file );
+        $self->tracks->{ $track->dmap_itemid } = $track;
+    }
 }
 
 sub handler {
@@ -77,7 +83,7 @@ sub _dmap_response {
     my $response = HTTP::Response->new( 200 );
     $response->content_type( 'application/x-dmap-tagged' );
     $response->content( dmap_pack $dmap );
-    print Dump $dmap;# if $self->uri =~ m{music} && $self->debug;
+    print Dump $dmap if $self->debug && $self->uri =~/type=photo/;
     return $response;
 }
 
@@ -210,12 +216,18 @@ sub _playlist_songs {
 }
 
 
+# some things are always present in the listings returned, whether you
+# ask for them or not
+sub always_answer {
+    qw( dmap.itemname dmap.itemkind dmap.itemid );
+}
+
 sub _all_tracks {
     my $self = shift;
     my @tracks;
 
-    $self->uri =~ m{meta=(.*?)&};
-    my @fields = split /,/, $1;
+    my %chunks = map { split /=/, $_, 2 } split /&/, $self->uri->query;
+    my @fields = $self->always_answer, split /(?:,|%2C)/, $chunks{meta};
 
     for my $track (values %{ $self->tracks }) {
         my %values = ( com_apple_itunes_smart_playlist => 0, %$track );
@@ -223,7 +235,7 @@ sub _all_tracks {
         push @tracks, [ 'dmap.listingitem' => [
             map {
                 (my $field = $_) =~ s{[.-]}{_}g;
-                [ $_ => $values{$field} ]
+                [ $_ => $track->$field() ]
             } @fields ] ];
     }
     return \@tracks;
