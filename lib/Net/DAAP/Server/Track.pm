@@ -1,12 +1,10 @@
-package Net::DAAP::Server::Store::Item;
+package Net::DAAP::Server::Track;
 use strict;
 use warnings;
-use base qw( Net::DAAP::Server::Store );
+use base qw( Class::Accessor::Fast );
 use MP3::Info;
 
-# crap knows where we're going to populate all this from
-__PACKAGE__->simple_db_spec(
-    map { $_ => '' } qw(
+__PACKAGE__->mk_accessors(qw(
       file
 
       dmap_itemid dmap_itemname dmap_itemkind dmap_persistentid
@@ -26,10 +24,8 @@ my $i;
 sub new_from_file {
     my $class = shift;
     my $file = shift;
-
-    my $self = $class->new( file => $file );
+    my $self = $class->new({ file => $file });
     print "Adding $file\n";
-    $self->load;
 
     my $tag = MP3::Info->new( $file );
 

@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Net::DAAP::Server::Track;
 use Net::DAAP::DMAP::Pack qw( dmap_pack );
+use File::Find::Rule;
 use base 'Class::Accessor::Fast';
 __PACKAGE__->mk_accessors(qw( path tracks ));
 
@@ -39,9 +40,13 @@ Net::DAAP::Server - Provide a DAAP Server
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER::new( { tracks => [], @_ } );
-    push { $self->tracks }, Net::DAAP::Server::Track->new_from_file( $_ )
-      for find( name => "*.mp3", in => $self->path );
+    my $self = $class->SUPER::new( { tracks => {}, @_ } );
+    for my $file ( find name => "*.mp3", in => $self->path ) {
+        my $track = Net::DAAP::Server::Track->new_from_file( $file );
+        $self->tracks->{ $track->dmap_itemid } = $track;
+    }
+    use YAML;
+    print Dump $self;
     return $self;
 }
 
