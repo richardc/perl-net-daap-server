@@ -7,12 +7,14 @@ use POE;
 use Net::DAAP::Server;
 use Net::DAAP::Client 0.4;
 
+my $name = "Net::DAAP::Server testsuite";
 my $port = 23689;
 my $pid = fork;
 die "couldn't fork a server $!" unless defined $pid;
 unless ($pid) {
     my $server = Net::DAAP::Server->new( path  => 't/share',
                                          port  => $port,
+                                         name  => $name,
                                          debug => 0);
     diag( "starting kernel" );
     $poe_kernel->run;
@@ -34,7 +36,7 @@ is( scalar keys %$songs, 2, "2 songs in the database" );
 
 
 my @playlists = values %{ $client->playlists };
-is( $playlists[0]{'dmap.itemname'}, 'Net::DAAP::Server', 'got main playlist');
+is( $playlists[0]{'dmap.itemname'}, $name, 'got main playlist');
 
 my $playlist_tracks = $client->playlist( $playlists[0]{'dmap.itemid'} );
 is( scalar @$playlist_tracks, 2, "2 tracks on main playlist" );

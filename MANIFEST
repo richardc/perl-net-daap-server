@@ -1,4 +1,5 @@
 Makefile.PL
+Changes
 Build.PL
 META.yml
 daap_server

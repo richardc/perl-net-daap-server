@@ -4,7 +4,7 @@ use warnings;
 use Net::DAAP::Server::Track;
 use File::Find::Rule;
 use base qw( Net::DMAP::Server );
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub protocol { 'daap' }
 
